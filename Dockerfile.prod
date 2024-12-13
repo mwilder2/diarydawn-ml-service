@@ -1,0 +1,44 @@
+# Use an official Python base image
+FROM python:3.9
+
+# Set the working directory in the container
+WORKDIR /codebase
+
+# Install Gunicorn
+RUN pip install gunicorn
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    python3-pip \
+    python3-dev \
+    libdbus-glib-1-dev \
+    libgirepository1.0-dev \
+    && apt-get clean
+
+# Set the PYTHONPATH environment variable
+ENV PYTHONPATH "${PYTHONPATH}:/codebase"
+
+# Copy the requirements file and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the Flask application code
+COPY . .
+
+COPY ../../../../*.json ./
+COPY ../../../../*.txt ./
+COPY ../../../../*.safetensors ./
+
+# Expose the port Gunicorn will run on
+EXPOSE 8000
+
+# List contents of the /codebase/app directory
+RUN ls -la /codebase/app/
+
+# ENV FLASK_APP=app:app.py
+
+# Start Gunicorn with multiple worker processes
+CMD ["gunicorn", "-w", "4", "app.main:app", "--bind", "0.0.0.0:8000", "--log-level=debug"]
+# CMD ["flask", "run", "--host", "0.0.0.0"]
+
